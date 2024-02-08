@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #include "constants.h"
+#include <Stepper.h>
 
 //There's a reason class is declared before global variables
-
 class Stepper{
   public:
   Stepper(){
@@ -16,6 +16,7 @@ class Stepper{
     void moveStepper(int &rightTotalSteps,int &leftTotalSteps, int &stepsElapsed, int &oscillations);
 };
 
+
 Stepper myStepper;
 
 /* void getPotValue(){
@@ -27,23 +28,20 @@ Stepper myStepper;
 } */
 
 // global constants adhering to stepper motion
+static int clockWiseAngle = 30;
+static int clockWiseStep = myStepper.convertAngleToSteps(clockWiseAngle);
+static int antiClockWiseAngle = 40;
+static int antiClockWiseStep = myStepper.convertAngleToSteps(antiClockWiseAngle);
 
-static int clockWiseAngle = 180;
-static int clockWiseStep = int(myStepper.convertAngleToSteps(clockWiseAngle));
-
-
-static int antiClockWiseAngle = 90;
-static int antiClockWiseStep = int(myStepper.convertAngleToSteps(antiClockWiseAngle));
-
-static int stepsElapsed = 0;
-static int speedOfPulse = 500;
 static int oscillations = 5;
+static int stepsElapsed;
+static int speedOfPulse = 500;
+static bool directionBool;
 
 
-//Classe declaration and Global constants adhering to display
 const char firstLine[] = "CW : ";
 const char secondLine[] = "CCW : ";
-const char thirdLine[] = "No : ";
+const char thirdLine[] = "Duration : "; 
 
 class Display {
 private:
@@ -174,6 +172,5 @@ void Stepper::moveStepper(int &rightTotalSteps,int &leftTotalSteps, int &stepsEl
     moveStepperRight(leftTotalSteps,stepsElapsed);
     stepsElapsed=0;
     oscillations--;
-    myDisplay.displayText();
-  }
+    }
 }
