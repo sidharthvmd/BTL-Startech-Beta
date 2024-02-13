@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #include "constants.h"
-#include <Stepper.h>
+#include<Keypad.h>
+
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 //There's a reason class is declared before global variables
 class Stepper{
@@ -38,6 +40,17 @@ static int stepsElapsed;
 static int speedOfPulse = 500;
 static bool directionBool;
 
+String angleInString = "";
+
+enum State {
+  ENTER_CLOCKWISE,
+  ENTER_ANTICLOCKWISE,
+  CONFIRMATION,
+  IDLE
+};
+
+bool isStepperRunning = false;
+State currentState = IDLE;
 
 const char firstLine[] = "CW : ";
 const char secondLine[] = "CCW : ";
@@ -103,25 +116,56 @@ public:
 
 Display myDisplay;
 
+class Event {
+public:
+  void handleKeypadInput() {
+    if (!isStepperRunning) {
+      char key = keypad.getKey();
+
+      if (key) {
+        switch (key) {
+          case 'A':
+            currentState = ENTER_CLOCKWISE;
+            break;
+          case 'B':
+            currentState = ENTER_ANTICLOCKWISE;
+            break;
+          case 'C':
+            currentState = CONFIRMATION;
+            break;
+          case 'D':
+            resetStepper(myStepper);
+            currentState = IDLE;
+            break;
+          case '#':
+            clearInput();
+            break;
+          default:
+            updateInput(key);
+            break;
+        }
+      }
+    }
+  }
+
+  void handleState();
+  private:
+    void clearInput();
+    void  updateInput(int key);
+    void resetStepper(class &stepper);
+};
+
+
 void setup(){
   Serial.begin(9600);
   myDisplay.setup();
-  Serial.print("Clockwise angle : ");
-  Serial.println(clockWiseAngle);
-  Serial.print("Clockwise Step : ");
-  Serial.println(clockWiseStep);
-  Serial.print("Anticlockwise angle : ");
-  Serial.println(antiClockWiseAngle);
-  Serial.print("Anticlockwise Step : ");
-  Serial.println(antiClockWiseStep);
 }
 
+Event myEvent;
+
 void loop() {
-  myDisplay.displayText();
-  //myStepper.moveStepper(clockWiseStep,antiClockWiseStep,stepsElapsed,oscillations);
-  myStepper.moveStepperLeft(clockWiseStep,stepsElapsed);
-  myStepper.moveStepperRight(antiClockWiseStep,stepsElapsed);
-  myDisplay.displayDuration();
+  Event.handleKeyPadInput();
+  Event.handleState();
 }
 
 void Stepper::moveStepperRight(int &totalSteps, int &stepsElapsed ){
