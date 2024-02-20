@@ -1,7 +1,39 @@
 #include <Arduino.h>
-#include "Display.h"
+//#include "Display.h"
+#include<Adafruit_SSD1306.h>
 #include <Stepper.h>
 #include <Keypad.h>
+#include <SPI.h>
+#include <Wire.h>
+
+#define SCREEN_WIDTH 128 
+#define SCREEN_HEIGHT 64 
+#define SCREEN_ADDRESS 0x3C
+#define OLED_RESET     -1
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define NUMFLAKES     10 // Number of snowflakes in the animation example
+
+#define LOGO_HEIGHT   16
+#define LOGO_WIDTH    16
+static const unsigned char PROGMEM logo_bmp[] =
+{ 0b00000000, 0b11000000,
+  0b00000001, 0b11000000,
+  0b00000001, 0b11000000,
+  0b00000011, 0b11100000,
+  0b11110011, 0b11100000,
+  0b11111110, 0b11111000,
+  0b01111110, 0b11111111,
+  0b00110011, 0b10011111,
+  0b00011111, 0b11111100,
+  0b00001101, 0b01110000,
+  0b00011011, 0b10100000,
+  0b00111111, 0b11100000,
+  0b00111111, 0b11110000,
+  0b01111100, 0b11110000,
+  0b01110000, 0b01110000,
+  0b00000000, 0b00110000 };
 
 //keypad constants
 const byte ROWS = 4;
@@ -17,7 +49,6 @@ byte rowPins[ROWS] = {11, 10, 9, 8};
 byte colPins[COLS] = {7, 6, 5, 4};
 
 //class declarations
-Display myDisplay;
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
@@ -51,9 +82,16 @@ class Events{
   }
 
 void updateGlobalDataWithKeypad(int &outsideValue, const char* displayText) {
-    myDisplay.displayAngle(displayText, outsideValue);
+    display.clearDisplay();
+    display.setTextSize(3);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.print(displayText);
+    display.print(": ");
+    display.print(outsideValue);
+    display.display();
+
     int result = 0;
-    outsideValue = 0;
     char key;
     int insideValue;
     bool confirmed = false;
@@ -62,42 +100,31 @@ void updateGlobalDataWithKeypad(int &outsideValue, const char* displayText) {
         key = keypad.getKey();
 
         if (key) {
-            if (key == '#') { // Terminate input on '#' key
-                if (!confirmed) {
-                    myDisplay.displayAngle("CW", outsideValue);
-                    myDisplay.displayDuration("Confirm ?");
-                    delay(1000);  // Add a delay for user confirmation
-                    char confirmKey = keypad.getKey();
-                    
-                    if (confirmKey == '#') {
-                        confirmed = true;
-                        break;
-                    } else {
-                        // Reset if not confirmed
-                        myDisplay.displayAngle(displayText, outsideValue);
-                        result = 0;
-                        outsideValue = 0;
-                        continue;
-                    }
-                } else {
-                    // Exit if already confirmed
-                    break;
-                }
-            }
-
-            if (key == '*') { // Clear input on '*' key
+            if (key == '#') {
+                confirmed = true;
+            } else if (key == '*') {
                 outsideValue = 0;
                 insideValue = 0;
                 result = 0;
                 confirmed = false;
-                myDisplay.displayAngle(displayText, outsideValue);
-                continue;
+            } else {
+                insideValue = key - '0';
+                result = (result * 10) + insideValue;
+                outsideValue = result;
             }
 
-            insideValue = key - '0';
-            result = (result * 10) + insideValue;
-            outsideValue = result;
-            myDisplay.displayAngle("CW", outsideValue);
+            display.clearDisplay();
+            display.setTextSize(3);
+            display.setTextColor(SSD1306_WHITE);
+            display.setCursor(0, 0);
+            display.print(displayText);
+            display.print(": ");
+            display.print(outsideValue);
+            display.display();
+
+            if (confirmed) {
+                break;
+            }
         }
     }
 }
@@ -109,14 +136,21 @@ Events myEvent;
 
 void setup(){
   Serial.begin(9600);
-  myDisplay.setup();
-  myDisplay.displayWelcomeText();
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  display.display();
+  delay(2000); // Pause for 2 seconds
+
+  // Clear the buffer
+  display.clearDisplay();
 }
 
 
 void loop() {
-  //myEvent.updateGlobalDataWithKeypad(clockWiseAngle,"CW");
-  //myEvent.updateGlobalDataWithKeypad(antiClockWiseAngle,"CCW");
+  myEvent.updateGlobalDataWithKeypad(clockWiseAngle,"CW");
+  myEvent.updateGlobalDataWithKeypad(antiClockWiseAngle,"CCW");
   isStepperRunning = true;
   //clockWiseStep = myStepper.convertAngleToSteps(clockWiseAngle); 
   //antiClockWiseStep = myStepper.convertAngleToSteps(antiClockWiseAngle);
