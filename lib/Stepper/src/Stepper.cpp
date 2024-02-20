@@ -54,9 +54,9 @@ void Stepper::moveStepper(int &rightTotalSteps,int &leftTotalSteps, int &stepsEl
     }
 }
 
-void Stepper::allIn(int &speed){
+void Stepper::allIn(int &speed, int& duration, int& stepsElapsed){
   digitalWrite(directionPin, HIGH);
-  while (true) {
+  while (stepsElapsed!=(duration*6400)) {
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(speed);
     digitalWrite(stepPin, LOW);

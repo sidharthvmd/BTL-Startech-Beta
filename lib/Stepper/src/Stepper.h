@@ -18,7 +18,7 @@ class Stepper{
     void moveStepperRight(int &totalSteps, int &stepsElapsed, int &speed);
     void moveStepperLeft(int &totalSteps, int &stepsElapsed, int &speed);
     int convertAngleToSteps(int& angle);
-    void allIn(int &speed);
+    void allIn(int &speed, int& duration, int& stepsElapsed);
     void moveStepper(int &rightTotalSteps,int &leftTotalSteps, int &stepsElapsed, int &oscillations, int &speed);
 };
 

@@ -81,6 +81,14 @@ class Events{
         return true;
   }
 
+    bool checkDuration(int &angle){
+    if (angle<=0){
+        return false;
+    }
+    else
+        return true;
+  }
+
 void updateGlobalDataWithKeypad(int &outsideValue, const char* displayText) {
     display.clearDisplay();
     display.setTextSize(3);
@@ -95,6 +103,8 @@ void updateGlobalDataWithKeypad(int &outsideValue, const char* displayText) {
     char key;
     int insideValue;
     bool confirmed = false;
+    bool angle = false;
+    bool valid = false;
 
     while (true) {
         key = keypad.getKey();
@@ -118,16 +128,180 @@ void updateGlobalDataWithKeypad(int &outsideValue, const char* displayText) {
             display.setTextColor(SSD1306_WHITE);
             display.setCursor(0, 0);
             display.print(displayText);
-            display.print(": ");
+            display.print(":");
             display.print(outsideValue);
             display.display();
 
+            angle = checkAngle(outsideValue);
+
             if (confirmed) {
-                break;
+                if (angle) {
+                    display.clearDisplay();
+                    display.setTextSize(3);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                    display.print("Confirm?");
+                    display.print(": ");
+                    display.print(outsideValue);
+                    display.display();
+
+                    while (true) {
+                        key = keypad.getKey();
+                        if (key == '#') {
+                            valid = true;
+                            break;
+                        } else if (key == '*') {
+                            outsideValue = 0;
+                            insideValue = 0;
+                            result = 0;
+                            confirmed = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (valid) {
+                    break;
+                } else {
+                    display.clearDisplay();
+                    display.setTextSize(3);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                    display.print("Invalid");
+                    display.display();
+                    confirmed = false;
+                }
             }
         }
     }
 }
+
+
+void updateDuration(int &outsideValue) {
+    display.clearDisplay();
+    display.setTextSize(3);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.print("OSC");
+    display.print(":");
+    display.print(outsideValue);
+    display.display();
+
+    int result = 0;
+    char key;
+    int insideValue;
+    bool confirmed = false;
+    bool angle = false;
+    bool valid = false;
+
+    while (true) {
+        key = keypad.getKey();
+
+        if (key) {
+            if (key == '#') {
+                confirmed = true;
+            } else if (key == '*') {
+                outsideValue = 0;
+                insideValue = 0;
+                result = 0;
+                confirmed = false;
+            } else {
+                insideValue = key - '0';
+                result = (result * 10) + insideValue;
+                outsideValue = result;
+            }
+
+            display.clearDisplay();
+            display.setTextSize(3);
+            display.setTextColor(SSD1306_WHITE);
+            display.setCursor(0, 0);
+            display.print("OSC");
+            display.print(": ");
+            display.print(outsideValue);
+            display.display();
+
+            angle = checkDuration(outsideValue);
+
+            if (confirmed) {
+                if (angle) {
+                    display.clearDisplay();
+                    display.setTextSize(3);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                    display.print("Confirm?");
+                    display.print(": ");
+                    display.print(outsideValue);
+                    display.display();
+
+                    while (true) {
+                        key = keypad.getKey();
+                        if (key == '#') {
+                            valid = true;
+                            break;
+                        } else if (key == '*') {
+                            outsideValue = 0;
+                            insideValue = 0;
+                            result = 0;
+                            confirmed = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (valid) {
+                    break;
+                } else {
+                    display.clearDisplay();
+                    display.setTextSize(3);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                    display.print("Invalid");
+                    display.print(": ");
+                    display.print(outsideValue);
+                    display.display();
+                    confirmed = false;
+                }
+            }
+        }
+    }
+}
+
+
+  void displayText(int &clockWiseAngle, int &antiClockWiseAngle, int &oscillations) {
+      display.clearDisplay();
+      
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+
+      display.setCursor(0, 0);
+      display.print("CW : ");
+      display.println(String(clockWiseAngle));
+
+      display.setCursor(0, 20); 
+      display.print("CCW :");
+      display.println(String(antiClockWiseAngle));
+
+      display.setTextSize(1);
+      display.setCursor(0, 50); 
+      display.print("OSC :");
+      display.println(String(oscillations));
+      display.display();
+  }
+
+  void displayText(int &oscillations) {
+      display.clearDisplay();
+      
+      display.setTextSize(3);
+      display.setTextColor(SSD1306_WHITE);
+
+      display.setCursor(0, 0);
+      display.print("OSC:");
+      display.println(String(oscillations));
+      display.display();
+  }
+
+
+
 
 };
 
@@ -151,9 +325,29 @@ void setup(){
 void loop() {
   myEvent.updateGlobalDataWithKeypad(clockWiseAngle,"CW");
   myEvent.updateGlobalDataWithKeypad(antiClockWiseAngle,"CCW");
+  myEvent.updateDuration(oscillations);
   isStepperRunning = true;
-  //clockWiseStep = myStepper.convertAngleToSteps(clockWiseAngle); 
-  //antiClockWiseStep = myStepper.convertAngleToSteps(antiClockWiseAngle);
-  myStepper.allIn(speedOfPulse);
-  //myStepper.moveStepper(clockWiseStep,antiClockWiseStep,stepsElapsed,oscillations,speedOfPulse);
+  myEvent.displayText(clockWiseAngle,antiClockWiseAngle,oscillations);
+  if (clockWiseAngle==360 && antiClockWiseAngle==360){
+    myStepper.allIn(speedOfPulse,oscillations,stepsElapsed);
+  }
+  else{
+    clockWiseStep = myStepper.convertAngleToSteps(clockWiseAngle);
+    antiClockWiseStep = myStepper.convertAngleToSteps(antiClockWiseAngle);
+      while(oscillations!=0){
+      myStepper.moveStepperRight(clockWiseStep,stepsElapsed, speedOfPulse);
+      stepsElapsed=0;
+      myStepper.moveStepperLeft(antiClockWiseStep,stepsElapsed, speedOfPulse);
+      stepsElapsed=0;
+      oscillations--;
+      myEvent.displayText(oscillations);
+    }
+}
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(3);
+  display.setCursor(0,0);
+  display.println("Done");
+  display.display();
+  delay(2000);
 }
