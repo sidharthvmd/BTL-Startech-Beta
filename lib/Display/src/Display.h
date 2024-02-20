@@ -18,10 +18,11 @@ private:
 public:
     Display() : oledDisplay(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET) {}
     void setup();
-    void displayText(const char *line1, const char *line2);
-    void displayText(String line1, String angle);
     void displayText(int &clockWiseAngle, int &antiClockWiseAngle, int &oscillations);
     void displayDuration(int &oscillations);
+    void displayWelcomeText();;
+    void displayAngle(const char* text, int& angle);
+    void errorDisplay(String text);
 };
 
 

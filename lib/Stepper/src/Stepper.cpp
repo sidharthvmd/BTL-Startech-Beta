@@ -48,8 +48,18 @@ void Stepper::moveStepper(int &rightTotalSteps,int &leftTotalSteps, int &stepsEl
   while(oscillations!=0){
     moveStepperRight(rightTotalSteps,stepsElapsed, speed);
     stepsElapsed=0;
-    moveStepperRight(leftTotalSteps,stepsElapsed, speed);
+    moveStepperLeft(leftTotalSteps,stepsElapsed, speed);
     stepsElapsed=0;
     oscillations--;
     }
+}
+
+void Stepper::allIn(int &speed){
+  digitalWrite(directionPin, HIGH);
+  while (true) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(speed);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speed);
+  }
 }
