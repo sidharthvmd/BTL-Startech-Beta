@@ -1,1 +1,1 @@
-# Source code for arduino uno for wrist rehabilitation appararuts
+# Source code for arduino uno for wrist rehabilitation apparatus
